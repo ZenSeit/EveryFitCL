@@ -6,7 +6,7 @@ import reactor.core.publisher.Mono;
 
 public interface CustomerRepository {
 
-    Flux<Customer> getAllCustomer();
+    Flux<Customer> getAllCustomers();
     Mono<Customer> getCustomerById(String id);
     Mono<String> deleteCustomer(String id);
 }
