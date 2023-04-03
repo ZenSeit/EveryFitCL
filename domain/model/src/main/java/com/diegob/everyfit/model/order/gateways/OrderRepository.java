@@ -1,6 +1,5 @@
 package com.diegob.everyfit.model.order.gateways;
 
-import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.order.Order;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
