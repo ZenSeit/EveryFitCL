@@ -20,12 +20,13 @@ import reactor.core.publisher.Mono;
 public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRepository {
 
     private final ObjectMapper mapper;
-    private final MongoDBRepository repository;
+    private final MongoDBRepository itemRepository;
     private final CustomerDBRepository customerDBRepository;
+    private final OrderDBRepository orderDBRepository;
 
     @Override
     public Flux<ClothingItem> getAllItems() {
-        return repository
+        return itemRepository
                 .findAll()
                 .switchIfEmpty(Mono.error(new Throwable("No items available")))
                 .map(student -> mapper.map(student, ClothingItem.class))
@@ -34,7 +35,7 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
 
     @Override
     public Mono<ClothingItem> registerItem(ClothingItem item) {
-        return repository
+        return itemRepository
                 .save(mapper.map(item, ItemData.class))
                 .map(item1 -> mapper.map(item1, ClothingItem.class))
                 .onErrorResume(Mono::error);
@@ -52,7 +53,11 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
 
     @Override
     public Mono<ClothingItem> getItemById(String id) {
-        return null;
+        return itemRepository
+                .findById(id)
+                .switchIfEmpty(Mono.error(new Throwable("Item not found")))
+                .map(car -> mapper.map(car, ClothingItem.class))
+                .onErrorResume(Mono::error);
     }
 
     @Override
@@ -65,13 +70,17 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
         return customerDBRepository
                 .findAll()
                 .switchIfEmpty(Mono.empty())
-                .map(student -> mapper.map(student, Customer.class))
+                .map(item -> mapper.map(item, Customer.class))
                 .onErrorResume(Mono::error);
     }
 
     @Override
     public Mono<Customer> getCustomerById(String id) {
-        return null;
+        return customerDBRepository
+                .findById(id)
+                .switchIfEmpty(Mono.empty())
+                .map(item -> mapper.map(item, Customer.class))
+                .onErrorResume(Mono::error);
     }
 
     @Override
