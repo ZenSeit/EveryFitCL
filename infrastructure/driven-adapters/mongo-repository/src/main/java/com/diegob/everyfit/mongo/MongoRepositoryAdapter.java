@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 
 @Repository
 @RequiredArgsConstructor
-public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRepository {
+public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRepository,OrderRepository {
 
     private final ObjectMapper mapper;
     private final MongoDBRepository itemRepository;
@@ -85,6 +85,25 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
 
     @Override
     public Mono<String> deleteCustomer(String id) {
+        return null;
+    }
+
+    @Override
+    public Flux<Order> getOrdersByCustomer(String CustomerId) {
+        return orderDBRepository
+                .findByCustomer(CustomerId)
+                .switchIfEmpty(Mono.empty())
+                .map(item -> mapper.map(item, Order.class))
+                .onErrorResume(Mono::error);
+    }
+
+    @Override
+    public Mono<Order> updateStateOrder(String OrderId, int state) {
+        return null;
+    }
+
+    @Override
+    public Mono<String> deleteOrder(String OrderId) {
         return null;
     }
 }

@@ -2,8 +2,10 @@ package com.diegob.everyfit.api;
 
 import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.customer.Customer;
+import com.diegob.everyfit.model.order.Order;
 import com.diegob.everyfit.usecase.getallcustomers.GetAllCustomersUseCase;
 import com.diegob.everyfit.usecase.getallitems.GetAllItemsUseCase;
+import com.diegob.everyfit.usecase.getordersbycustomer.GetOrdersByCustomerUseCase;
 import com.diegob.everyfit.usecase.registeritem.RegisterItemUseCase;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,7 +30,7 @@ public class RouterRest {
     }
 
     @Bean
-    public RouterFunction<ServerResponse> saveStudent(RegisterItemUseCase registerItemUseCase){
+    public RouterFunction<ServerResponse> saveItem(RegisterItemUseCase registerItemUseCase){
         return route(POST("/api/items").and(accept(MediaType.APPLICATION_JSON)),
                 request -> request.bodyToMono(ClothingItem.class)
                         .flatMap(item -> registerItemUseCase.apply(item)
@@ -45,5 +47,15 @@ public class RouterRest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(BodyInserters.fromPublisher(getAllCustomersUseCase.get(), Customer.class))
                         .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NO_CONTENT).bodyValue(throwable.getMessage())));
+    }
+
+    @Bean
+    public RouterFunction<ServerResponse> getOrdersByCustomerID(GetOrdersByCustomerUseCase getOrdersByCustomerUseCase){
+        return route(GET("/api/customers/{id}"),
+                request -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(BodyInserters.fromPublisher(getOrdersByCustomerUseCase.apply(request.pathVariable("id")), Order.class))
+                        .onErrorResume(throwable -> ServerResponse.noContent().build()));
+
     }
 }
