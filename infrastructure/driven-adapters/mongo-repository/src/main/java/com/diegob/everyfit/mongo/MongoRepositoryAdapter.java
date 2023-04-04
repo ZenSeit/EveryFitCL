@@ -5,10 +5,10 @@ import com.diegob.everyfit.model.clothingitem.gateways.ClothingItemRepository;
 import com.diegob.everyfit.model.customer.Customer;
 import com.diegob.everyfit.model.customer.gateways.CustomerRepository;
 import com.diegob.everyfit.model.order.Order;
+import com.diegob.everyfit.model.order.OrderState;
 import com.diegob.everyfit.model.order.gateways.OrderRepository;
 import com.diegob.everyfit.mongo.data.ItemData;
-import com.diegob.everyfit.mongo.helper.AdapterOperations;
-import lombok.AllArgsConstructor;
+import com.diegob.everyfit.mongo.data.OrderData;
 import lombok.RequiredArgsConstructor;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
@@ -43,12 +43,30 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
 
     @Override
     public Mono<ClothingItem> modifiedQuantity(String itemId, int quantity) {
-        return null;
+        return itemRepository
+                .findById(itemId)
+                .switchIfEmpty(Mono.empty())
+                .flatMap(item ->{
+                    if(quantity>=0){
+                        item.setQuantity(quantity);
+                        return itemRepository.save(item);
+                    }
+                    return Mono.just(item);
+                }).map(item1 -> mapper.map(item1, ClothingItem.class));
     }
 
     @Override
     public Mono<ClothingItem> updateInventoryAfterBuy(String itemId, int quantity) {
-        return null;
+        return itemRepository
+                .findById(itemId)
+                .switchIfEmpty(Mono.empty())
+                .flatMap(item ->{
+                    if(item.getQuantity()>=quantity){
+                        item.setQuantity(item.getQuantity()-quantity);
+                        return itemRepository.save(item);
+                    }
+                    return Mono.error(new Throwable("There is no enough stock"));
+                }).map(item1 -> mapper.map(item1, ClothingItem.class));
     }
 
     @Override
@@ -89,6 +107,14 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
     }
 
     @Override
+    public Mono<Order> createOrder(Order order) {
+        return orderDBRepository
+                .save(mapper.map(order, OrderData.class))
+                .map(order1 -> mapper.map(order1,Order.class))
+                .onErrorResume(Mono::error);
+    }
+
+    @Override
     public Flux<Order> getOrdersByCustomer(String CustomerId) {
         return orderDBRepository
                 .findByCustomer(CustomerId)
@@ -98,8 +124,21 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
     }
 
     @Override
-    public Mono<Order> updateStateOrder(String OrderId, int state) {
-        return null;
+    public Mono<Order> updateStateOrder(String orderId, int state) {
+        return orderDBRepository
+                .findById(orderId)
+                .switchIfEmpty(Mono.error(new Throwable("Order not found")))
+                .flatMap(order ->{
+                    switch (state) {
+                        case 0 -> order.setState(OrderState.PAYMENT);
+                        case 1 -> order.setState(OrderState.DELIVERY);
+                        case 2 -> order.setState(OrderState.COMPLETE);
+                        default -> {
+                            return Mono.error(new Throwable("invalid state for order"));
+                        }
+                    }
+                    return orderDBRepository.save(mapper.map(order,OrderData.class));
+                }).map(order1 -> mapper.map(order1, Order.class));
     }
 
     @Override
