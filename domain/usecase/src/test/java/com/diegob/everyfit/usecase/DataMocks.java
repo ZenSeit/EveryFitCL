@@ -64,4 +64,16 @@ public class DataMocks {
         return Flux.empty();
     }
 
+    public static Mono<Order> orderMono(){
+        return Mono.just(new Order("1","customer-id",
+                List.of(new ClothingItem("1", "Polo", "M", 15.60, "Cotton", Category.MEN, 5)),
+                OrderState.PAYMENT));
+    }
+
+    public static Order rawOrder(){
+        return new Order("1","customer-id",
+                List.of(new ClothingItem("1", "Polo", "M", 15.60, "Cotton", Category.MEN, 5)),
+                OrderState.PAYMENT);
+    }
+
 }
