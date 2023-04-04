@@ -34,5 +34,12 @@ public class DataMocks {
         return Mono.empty();
     };
 
+    public static Mono<ClothingItem> itemById(){
+        return Mono.just(new ClothingItem("1", "Polo", "M", 15.60, "Cotton", Category.MEN, 5));
+    }
+
+    public static Mono<ClothingItem> itemByIdEmpty(){
+        return Mono.empty();
+    }
 
 }
