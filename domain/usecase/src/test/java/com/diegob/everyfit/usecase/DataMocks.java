@@ -3,8 +3,12 @@ package com.diegob.everyfit.usecase;
 import com.diegob.everyfit.model.clothingitem.Category;
 import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.customer.Customer;
+import com.diegob.everyfit.model.order.Order;
+import com.diegob.everyfit.model.order.OrderState;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 public class DataMocks {
 
@@ -40,6 +44,20 @@ public class DataMocks {
 
     public static Mono<ClothingItem> itemByIdEmpty(){
         return Mono.empty();
+    }
+
+    public static Flux<Order> ordersByCustomer(){
+        return Flux.just(
+                new Order("1","customer-id",
+                List.of(new ClothingItem("1", "Polo", "M", 15.60, "Cotton", Category.MEN, 5)),
+                        OrderState.PAYMENT),
+                new Order("2","customer-id",
+                        List.of(new ClothingItem("1", "Polo", "M", 15.60, "Cotton", Category.MEN, 5)),
+                        OrderState.PAYMENT));
+    }
+
+    public static Flux<Order> ordersByCustomerEmpty(){
+        return Flux.empty();
     }
 
 }
