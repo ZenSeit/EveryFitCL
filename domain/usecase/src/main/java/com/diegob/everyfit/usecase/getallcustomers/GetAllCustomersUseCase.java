@@ -1,6 +1,5 @@
 package com.diegob.everyfit.usecase.getallcustomers;
 
-import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.customer.Customer;
 import com.diegob.everyfit.model.customer.gateways.CustomerRepository;
 import lombok.RequiredArgsConstructor;
