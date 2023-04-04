@@ -3,6 +3,7 @@ package com.diegob.everyfit.api;
 import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.customer.Customer;
 import com.diegob.everyfit.model.order.Order;
+import com.diegob.everyfit.usecase.generateorder.GenerateOrderUseCase;
 import com.diegob.everyfit.usecase.getallcustomers.GetAllCustomersUseCase;
 import com.diegob.everyfit.usecase.getallitems.GetAllItemsUseCase;
 import com.diegob.everyfit.usecase.getordersbycustomer.GetOrdersByCustomerUseCase;
@@ -58,4 +59,16 @@ public class RouterRest {
                         .onErrorResume(throwable -> ServerResponse.noContent().build()));
 
     }
+
+    @Bean
+    public RouterFunction<ServerResponse> generateOrder(GenerateOrderUseCase generateOrderUseCase){
+        return route(POST("/api/orders").and(accept(MediaType.APPLICATION_JSON)),
+                request -> request.bodyToMono(Order.class)
+                        .flatMap(order -> generateOrderUseCase.apply(order)
+                                .flatMap(result -> ServerResponse.status(201)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .bodyValue(result))
+                                .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_ACCEPTABLE).bodyValue(throwable.getMessage()))));
+    }
+
 }

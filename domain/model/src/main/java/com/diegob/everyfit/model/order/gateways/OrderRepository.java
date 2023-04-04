@@ -6,6 +6,7 @@ import reactor.core.publisher.Mono;
 
 public interface OrderRepository {
 
+    Mono<Order> createOrder(Order order);
     Flux<Order> getOrdersByCustomer(String CustomerId);
     Mono<Order> updateStateOrder(String OrderId, int state);
     Mono<String> deleteOrder(String OrderId);
