@@ -4,6 +4,7 @@ import com.diegob.everyfit.model.clothingitem.Category;
 import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.customer.Customer;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public class DataMocks {
 
@@ -24,5 +25,14 @@ public class DataMocks {
     public static Flux<ClothingItem> allClothingItemEmpty(){
         return Flux.empty();
     };
+
+    public static Mono<Customer> customerById(){
+        return Mono.just(new Customer("1", "Diego", "Becerra","diego@correo.com","123456789"));
+    };
+
+    public static Mono<Customer> customerByIdEmpty(){
+        return Mono.empty();
+    };
+
 
 }
