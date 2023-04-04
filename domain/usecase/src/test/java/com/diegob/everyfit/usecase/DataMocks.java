@@ -39,11 +39,11 @@ public class DataMocks {
     };
 
     public static Mono<ClothingItem> itemById(){
-        return Mono.just(new ClothingItem("1", "Polo", "M", 15.60, "Cotton", Category.MEN, 5));
+        return Mono.just(new ClothingItem("1", "Polo", "M", 15.60, "Cotton", Category.MEN, 1));
     }
 
     public static ClothingItem rawItem(){
-        return new ClothingItem("1", "Polo", "M", 15.60, "Cotton", Category.MEN, 5);
+        return new ClothingItem("1", "Polo", "M", 15.60, "Cotton", Category.MEN, 1);
     }
 
     public static Mono<ClothingItem> itemByIdEmpty(){
