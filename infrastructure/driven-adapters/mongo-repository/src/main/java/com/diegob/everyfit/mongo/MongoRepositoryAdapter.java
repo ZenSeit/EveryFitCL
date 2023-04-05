@@ -42,7 +42,7 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
     }
 
     @Override
-    public Mono<ClothingItem> modifiedQuantity(String itemId, int quantity) {
+    public Mono<ClothingItem> modifyQuantity(String itemId, int quantity) {
         return itemRepository
                 .findById(itemId)
                 .switchIfEmpty(Mono.empty())
@@ -80,6 +80,11 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
 
     @Override
     public Mono<String> deleteItem(String id) {
+        return null;
+    }
+
+    @Override
+    public Mono<Customer> createUser() {
         return null;
     }
 
@@ -133,6 +138,7 @@ public class MongoRepositoryAdapter implements ClothingItemRepository,CustomerRe
                         case 0 -> order.setState(OrderState.PAYMENT);
                         case 1 -> order.setState(OrderState.DELIVERY);
                         case 2 -> order.setState(OrderState.COMPLETE);
+                        case 3 -> order.setState(OrderState.CANCEL);
                         default -> {
                             return Mono.error(new Throwable("invalid state for order"));
                         }

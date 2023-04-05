@@ -17,7 +17,7 @@ public class GetCustomerByIdUseCase implements Function<String, Mono<Customer>> 
 
 
     @Override
-    public Mono<Customer> apply(String CustomerId) {
-        return customerRepository.getCustomerById(CustomerId);
+    public Mono<Customer> apply(String customerId) {
+        return customerRepository.getCustomerById(customerId);
     }
 }

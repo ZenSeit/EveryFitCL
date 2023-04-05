@@ -19,7 +19,7 @@ public class OrderData {
     @Id
     private String id= UUID.randomUUID().toString().substring(0,10);
     private String customer;
-    private List<String> products;
-    private OrderState state;
+    private List<ItemData> products;
+    private OrderState state = OrderState.PAYMENT;
 
 }

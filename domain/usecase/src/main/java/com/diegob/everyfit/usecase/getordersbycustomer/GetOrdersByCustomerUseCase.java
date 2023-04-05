@@ -12,9 +12,8 @@ public class GetOrdersByCustomerUseCase implements Function<String,Flux<Order>> 
 
     private final OrderRepository orderRepository;
 
-
     @Override
-    public Flux<Order> apply(String CustomerId) {
-        return orderRepository.getOrdersByCustomer(CustomerId);
+    public Flux<Order> apply(String customerId) {
+        return orderRepository.getOrdersByCustomer(customerId);
     }
 }

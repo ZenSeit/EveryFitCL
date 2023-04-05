@@ -1,4 +1,5 @@
 package com.diegob.everyfit.model.order;
+import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import lombok.Builder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -16,7 +17,7 @@ public class Order {
 
     private String id;
     private String customer;
-    private List<String> products;
-    private OrderState state;
+    private List<ClothingItem> products;
+    private OrderState state = OrderState.PAYMENT;
 
 }
