@@ -8,6 +8,6 @@ public interface CustomerRepository {
 
     Mono<Customer> createUser();
     Flux<Customer> getAllCustomers();
-    Mono<Customer> getCustomerById(String id);
+    Mono<Customer> getCustomerById(String customerId);
     Mono<String> deleteCustomer(String id);
 }
