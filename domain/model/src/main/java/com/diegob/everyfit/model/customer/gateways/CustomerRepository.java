@@ -9,5 +9,6 @@ public interface CustomerRepository {
     Mono<Customer> createUser();
     Flux<Customer> getAllCustomers();
     Mono<Customer> getCustomerById(String customerId);
+    Mono<Customer> getCustomerByEmail(String email);
     Mono<String> deleteCustomer(String id);
 }

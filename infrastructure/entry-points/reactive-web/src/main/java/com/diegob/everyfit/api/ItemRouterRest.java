@@ -30,7 +30,7 @@ import static org.springframework.web.reactive.function.server.RequestPredicates
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
-public class RouterRest {
+public class ItemRouterRest {
     @Bean
     @RouterOperation(path = "/api/items",
             produces = {MediaType.APPLICATION_JSON_VALUE},
@@ -92,109 +92,6 @@ public class RouterRest {
                                 .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_ACCEPTABLE).bodyValue(throwable.getMessage()))));
     }
 
-    @Bean
-    @RouterOperation(path = "/api/customers",
-            produces = {MediaType.APPLICATION_JSON_VALUE},
-            beanClass = GetAllCustomersUseCase.class,
-            method = RequestMethod.GET,
-            beanMethod = "get",
-            operation = @Operation(operationId = "getAllCustomers",
-                    tags = "Customers use cases",
-                    responses = {
-                            @ApiResponse(responseCode = "200",
-                                    description = "Success",
-                                    content = @Content(schema = @Schema(implementation = Customer.class))),
-                            @ApiResponse(responseCode = "204", description = "No customers found")}
-            )
-    )
-    public RouterFunction<ServerResponse> getAllCustomers(GetAllCustomersUseCase getAllCustomersUseCase){
-        return route(GET("/api/customers"),
-                request -> ServerResponse.status(200)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(BodyInserters.fromPublisher(getAllCustomersUseCase.get(), Customer.class))
-                        .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NO_CONTENT).bodyValue(throwable.getMessage())));
-    }
-
-    @Bean
-    @RouterOperation(path = "/api/orders/{customerId}",
-            produces = {MediaType.APPLICATION_JSON_VALUE},
-            beanClass = GetOrdersByCustomerUseCase.class,
-            method = RequestMethod.GET,
-            beanMethod = "apply",
-            operation = @Operation(operationId = "getOrdersByCustomerID",
-                    tags = "Order use cases",
-                    parameters = {
-                            @Parameter(
-                                    name = "customerId",
-                                    description = "customer id",
-                                    required = true,
-                                    in = ParameterIn.PATH
-                            )
-                    },
-                    responses = {
-                            @ApiResponse(
-                                    responseCode = "200",
-                                    description = "Orders found",
-                                    content = @Content(
-                                            schema = @Schema(
-                                                    implementation = Order.class
-                                            )
-                                    )
-                            ),
-                            @ApiResponse(responseCode = "404",
-                                    description = "Orders not found"
-                            )
-                    }
-            )
-    )
-    public RouterFunction<ServerResponse> getOrdersByCustomerID(GetOrdersByCustomerUseCase getOrdersByCustomerUseCase){
-        return route(GET("/api/orders/{customerId}"),
-                request -> ServerResponse.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(BodyInserters.fromPublisher(getOrdersByCustomerUseCase.apply(request.pathVariable("customerId")), Order.class))
-                        .onErrorResume(throwable -> ServerResponse.noContent().build()));
-
-    }
-
-    @Bean
-    @RouterOperation(path = "/api/orders",
-            produces = {MediaType.APPLICATION_JSON_VALUE},
-            beanClass = GenerateOrderUseCase.class,
-            method = RequestMethod.POST,
-            beanMethod = "apply",
-            operation = @Operation(
-                    operationId = "generateOrder",
-                    tags = "Order use cases",
-                    parameters = {
-                            @Parameter(
-                                    name = "order",
-                                    in = ParameterIn.PATH,
-                                    schema = @Schema(implementation = Order.class)
-                            )
-                    },
-                    responses = {
-                            @ApiResponse(
-                                    responseCode = "201",
-                                    description = "Success",
-                                    content = @Content(schema = @Schema(implementation = Order.class))
-                            ),
-                            @ApiResponse(responseCode = "406", description = "Not acceptable")},
-                    requestBody = @RequestBody(required = true,
-                            description = "generate a new order",
-                            content = @Content(schema = @Schema(implementation = Order.class)))
-            )
-    )
-    public RouterFunction<ServerResponse> generateOrder(GenerateOrderUseCase generateOrderUseCase){
-        return route(POST("/api/orders").and(accept(MediaType.APPLICATION_JSON)),
-                request -> request.bodyToMono(Order.class)
-                        .flatMap(order ->
-                                generateOrderUseCase.apply(order)
-                                .flatMap(result -> ServerResponse.status(201)
-                                        .contentType(MediaType.APPLICATION_JSON)
-                                        .bodyValue(result))
-                                .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_ACCEPTABLE).bodyValue(throwable.getMessage()))
-                        ));
-    }
 
     @Bean
     @RouterOperation(path = "/api/items/{itemId}/{quantity}",
@@ -237,6 +134,8 @@ public class RouterRest {
                                         .bodyValue(item))
                                 .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_ACCEPTABLE).bodyValue(throwable.getMessage())));
     }
+
+
 
 
 
