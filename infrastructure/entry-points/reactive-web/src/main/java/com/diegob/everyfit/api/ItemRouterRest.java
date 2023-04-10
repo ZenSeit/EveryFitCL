@@ -6,6 +6,7 @@ import com.diegob.everyfit.model.order.Order;
 import com.diegob.everyfit.usecase.generateorder.GenerateOrderUseCase;
 import com.diegob.everyfit.usecase.getallcustomers.GetAllCustomersUseCase;
 import com.diegob.everyfit.usecase.getallitems.GetAllItemsUseCase;
+import com.diegob.everyfit.usecase.getitembyid.GetItemByIdUseCase;
 import com.diegob.everyfit.usecase.getordersbycustomer.GetOrdersByCustomerUseCase;
 import com.diegob.everyfit.usecase.modifyquantity.ModifyQuantityUseCase;
 import com.diegob.everyfit.usecase.registeritem.RegisterItemUseCase;
@@ -135,7 +136,46 @@ public class ItemRouterRest {
                                 .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_ACCEPTABLE).bodyValue(throwable.getMessage())));
     }
 
+    @Bean
+    @RouterOperation(path = "/api/items/{itemId}",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            beanClass = GetItemByIdUseCase.class,
+            method = RequestMethod.GET,
+            beanMethod = "apply",
+            operation = @Operation(operationId = "getItemById",
+                    tags = "Item use cases",
+                    parameters = {
+                            @Parameter(
+                                    name = "itemId",
+                                    description = "item id",
+                                    required = true,
+                                    in = ParameterIn.PATH
+                            )
+                    },
+                    responses = {
+                            @ApiResponse(
+                                    responseCode = "200",
+                                    description = "Item found",
+                                    content = @Content(
+                                            schema = @Schema(
+                                                    implementation = ClothingItem.class
+                                            )
+                                    )
+                            ),
+                            @ApiResponse(responseCode = "404",
+                                    description = "Item not found"
+                            )
+                    }
+            )
+    )
+    public RouterFunction<ServerResponse> getItemById(GetItemByIdUseCase getItemByIdUseCase){
+        return route(GET("/api/items/{itemId}"),
+                request -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(BodyInserters.fromPublisher(getItemByIdUseCase.apply(request.pathVariable("itemId")), ClothingItem.class))
+                        .onErrorResume(throwable -> ServerResponse.noContent().build()));
 
+    }
 
 
 

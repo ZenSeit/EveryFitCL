@@ -34,6 +34,10 @@ public class DataMocks {
         return Mono.just(new Customer("1", "Diego", "Becerra","diego@correo.com","123456789"));
     };
 
+    public static Customer customerRaw(){
+        return new Customer("1", "Diego", "Becerra","diego@correo.com","123456789");
+    };
+
     public static Mono<Customer> customerByIdEmpty(){
         return Mono.empty();
     };

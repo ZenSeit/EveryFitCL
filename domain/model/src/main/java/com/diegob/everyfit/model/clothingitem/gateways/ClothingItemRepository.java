@@ -10,7 +10,7 @@ public interface ClothingItemRepository {
     Mono<ClothingItem> registerItem(ClothingItem item);
     Mono<ClothingItem> modifyQuantity(String itemId,int quantity);
     Mono<ClothingItem> updateInventoryAfterBuy (String itemId,int quantity);
-    Mono<ClothingItem> getItemById(String id);
-    Mono<String> deleteItem(String id);
+    Mono<ClothingItem> getItemById(String itemId);
+    Mono<String> deleteItem(String itemId);
 
 }

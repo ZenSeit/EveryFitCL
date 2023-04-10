@@ -2,6 +2,7 @@ package com.diegob.everyfit.mongo;
 
 import com.diegob.everyfit.model.customer.Customer;
 import com.diegob.everyfit.model.customer.gateways.CustomerRepository;
+import com.diegob.everyfit.mongo.data.CustomerData;
 import lombok.RequiredArgsConstructor;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
@@ -17,8 +18,12 @@ public class CustomerRepositoryAdapter implements CustomerRepository {
     private final CustomerDBRepository customerDBRepository;
 
     @Override
-    public Mono<Customer> createUser() {
-        return null;
+    public Mono<Customer> createUser(Customer customer) {
+        return customerDBRepository
+                .findByEmail(customer.getEmail())
+                .switchIfEmpty(Mono.error(new Throwable("User already exists")))
+                .flatMap(customer1 -> customerDBRepository.save(mapper.map(customer, CustomerData.class)))
+                .map(item -> mapper.map(item, Customer.class));
     }
 
     @Override
@@ -41,12 +46,19 @@ public class CustomerRepositoryAdapter implements CustomerRepository {
 
     @Override
     public Mono<Customer> getCustomerByEmail(String email) {
-        return null;
+        return customerDBRepository
+                .findByEmail(email)
+                .switchIfEmpty(Mono.empty())
+                .map(item -> mapper.map(item, Customer.class))
+                .onErrorResume(Mono::error);
     }
 
     @Override
-    public Mono<String> deleteCustomer(String id) {
-        return null;
+    public Mono<String> deleteCustomer(String customerId) {
+        return customerDBRepository
+                .findById(customerId)
+                .switchIfEmpty(Mono.error(new Throwable("User not found")))
+                .flatMap(user -> customerDBRepository.delete(user).thenReturn("Customer deleted"));
     }
 
 }

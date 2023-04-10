@@ -1,5 +1,6 @@
 package com.diegob.everyfit.mongo;
 
+import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.order.Order;
 import com.diegob.everyfit.model.order.OrderState;
 import com.diegob.everyfit.model.order.gateways.OrderRepository;
@@ -10,19 +11,34 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+
 @Repository
 @RequiredArgsConstructor
 public class OrderRepositoryAdapter implements OrderRepository {
 
     private final ObjectMapper mapper;
     private final OrderDBRepository orderDBRepository;
+    private final MongoDBRepository itemRepository;
 
     @Override
     public Mono<Order> createOrder(Order order) {
-        return orderDBRepository
+        List<ClothingItem> orderItems = order.getProducts();
+        return itemRepository.findAllById(orderItems.stream().map(ClothingItem::getId).toList())
+                .switchIfEmpty(Mono.error(new Throwable("No items available")))
+                .map(item -> {
+                    System.out.println(item.getQuantity());
+                    System.out.println(orderItems.stream().filter(item1 -> item1.getId().equals(item.getId())).findFirst().get().getQuantity());
+                    if(item.getQuantity()>=orderItems.stream().filter(item1 -> item1.getId().equals(item.getId())).findFirst().get().getQuantity()){
+                        item.setQuantity(item.getQuantity()-orderItems.stream().filter(item1 -> item1.getId().equals(item.getId())).findFirst().get().getQuantity());
+                        System.out.println(item);
+                        return itemRepository.save(item);
+                    }
+                    return Mono.error(new Throwable("Item not have stock"));
+                }).then(orderDBRepository
                 .save(mapper.map(order, OrderData.class))
                 .map(order1 -> mapper.map(order1,Order.class))
-                .onErrorResume(Mono::error);
+                .onErrorResume(Mono::error));
     }
 
     @Override
@@ -54,8 +70,11 @@ public class OrderRepositoryAdapter implements OrderRepository {
     }
 
     @Override
-    public Mono<String> deleteOrder(String OrderId) {
-        return null;
+    public Mono<String> deleteOrder(String orderId) {
+        return orderDBRepository
+                .findById(orderId)
+                .switchIfEmpty(Mono.error(new Throwable("Order not found")))
+                .flatMap(order -> orderDBRepository.delete(order).then(Mono.just("Order deleted")));
     }
 
 }

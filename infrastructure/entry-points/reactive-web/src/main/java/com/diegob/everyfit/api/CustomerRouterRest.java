@@ -1,8 +1,13 @@
 package com.diegob.everyfit.api;
 
+import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.customer.Customer;
 import com.diegob.everyfit.usecase.getallcustomers.GetAllCustomersUseCase;
+import com.diegob.everyfit.usecase.getcustomerbyid.GetCustomerByIdUseCase;
+import com.diegob.everyfit.usecase.getitembyid.GetItemByIdUseCase;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -43,5 +48,46 @@ public class CustomerRouterRest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(BodyInserters.fromPublisher(getAllCustomersUseCase.get(), Customer.class))
                         .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NO_CONTENT).bodyValue(throwable.getMessage())));
+    }
+
+    @Bean
+    @RouterOperation(path = "/api/items/{itemId}",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            beanClass = GetItemByIdUseCase.class,
+            method = RequestMethod.GET,
+            beanMethod = "apply",
+            operation = @Operation(operationId = "getItemById",
+                    tags = "Item use cases",
+                    parameters = {
+                            @Parameter(
+                                    name = "itemId",
+                                    description = "item id",
+                                    required = true,
+                                    in = ParameterIn.PATH
+                            )
+                    },
+                    responses = {
+                            @ApiResponse(
+                                    responseCode = "200",
+                                    description = "Item found",
+                                    content = @Content(
+                                            schema = @Schema(
+                                                    implementation = ClothingItem.class
+                                            )
+                                    )
+                            ),
+                            @ApiResponse(responseCode = "404",
+                                    description = "Item not found"
+                            )
+                    }
+            )
+    )
+    public RouterFunction<ServerResponse> getCustomerById(GetCustomerByIdUseCase getCustomerByIdUseCase){
+        return route(GET("/api/customers/{customerId}"),
+                request -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(BodyInserters.fromPublisher(getCustomerByIdUseCase.apply(request.pathVariable("customerId")), Customer.class))
+                        .onErrorResume(throwable -> ServerResponse.noContent().build()));
+
     }
 }

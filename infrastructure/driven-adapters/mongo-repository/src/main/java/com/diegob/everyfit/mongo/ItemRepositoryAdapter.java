@@ -72,8 +72,11 @@ public class ItemRepositoryAdapter implements ClothingItemRepository {
     }
 
     @Override
-    public Mono<String> deleteItem(String id) {
-        return null;
+    public Mono<String> deleteItem(String itemId) {
+        return itemRepository
+                .findById(itemId)
+                .switchIfEmpty(Mono.error(new Throwable("Item not found")))
+                .flatMap(item -> itemRepository.delete(item).thenReturn("Item deleted"));
     }
 
 }
