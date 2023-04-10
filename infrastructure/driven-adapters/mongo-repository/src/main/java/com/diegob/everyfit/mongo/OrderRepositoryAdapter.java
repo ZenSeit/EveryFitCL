@@ -54,7 +54,7 @@ public class OrderRepositoryAdapter implements OrderRepository {
     public Mono<Order> updateStateOrder(String orderId, int state) {
         return orderDBRepository
                 .findById(orderId)
-                .switchIfEmpty(Mono.error(new Throwable("Order not found")))
+                .switchIfEmpty(Mono.empty())
                 .flatMap(order ->{
                     switch (state) {
                         case 0 -> order.setState(OrderState.PAYMENT);

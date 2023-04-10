@@ -1,8 +1,10 @@
 package com.diegob.everyfit.api;
 
 import com.diegob.everyfit.model.order.Order;
+import com.diegob.everyfit.usecase.deleteorder.DeleteOrderUseCase;
 import com.diegob.everyfit.usecase.generateorder.GenerateOrderUseCase;
 import com.diegob.everyfit.usecase.getordersbycustomer.GetOrdersByCustomerUseCase;
+import com.diegob.everyfit.usecase.updatestateorder.UpdateStateOrderUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -19,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Mono;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
@@ -60,10 +63,10 @@ public class OrderRouterRest {
     )
     public RouterFunction<ServerResponse> getOrdersByCustomerID(GetOrdersByCustomerUseCase getOrdersByCustomerUseCase){
         return route(GET("/api/orders/{customerId}"),
-                request -> ServerResponse.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(BodyInserters.fromPublisher(getOrdersByCustomerUseCase.apply(request.pathVariable("customerId")), Order.class))
-                        .onErrorResume(throwable -> ServerResponse.noContent().build()));
+                request -> getOrdersByCustomerUseCase.apply(request.pathVariable("customerId"))
+                        .collectList()
+                        .flatMap(orders -> ServerResponse.ok().body(BodyInserters.fromValue(orders)))
+                        .switchIfEmpty(ServerResponse.notFound().build()));
 
     }
 
@@ -105,6 +108,84 @@ public class OrderRouterRest {
                                                 .bodyValue(result))
                                         .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_ACCEPTABLE).bodyValue(throwable.getMessage()))
                         ));
+    }
+
+    @Bean
+    @RouterOperation(path = "/api/orders/{orderId}",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            beanClass = DeleteOrderUseCase.class,
+            method = RequestMethod.DELETE,
+            beanMethod = "apply",
+            operation = @Operation(operationId = "deleteOrder",
+                    tags = "Order use cases",
+                    parameters = {
+                            @Parameter(
+                                    name = "orderId",
+                                    description = "Order Id",
+                                    required = true,
+                                    in = ParameterIn.PATH
+                            )
+                    },
+                    responses = {
+                            @ApiResponse(
+                                    responseCode = "200",
+                                    description = "Order deleted successfully"
+                            ),
+                            @ApiResponse(responseCode = "404",
+                                    description = "Order not found"
+                            )
+                    }
+            )
+    )
+    public RouterFunction<ServerResponse> deleteOrder(DeleteOrderUseCase deleteOrderUseCase){
+        return route(DELETE("/api/orders/{orderId}"),
+                request ->  deleteOrderUseCase.apply(request.pathVariable("orderId"))
+                        .flatMap(result -> ServerResponse.status(204)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(result))
+                        .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_FOUND).build()));
+    }
+
+    @Bean
+    @RouterOperation(path = "/api/orders/{orderId}/{state}",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            beanClass = UpdateStateOrderUseCase.class,
+            method = RequestMethod.PUT,
+            beanMethod = "apply",
+            operation = @Operation(
+                    operationId = "updateOrder",
+                    tags = "Order use cases",
+                    parameters = {
+                            @Parameter(
+                                    name = "orderId",
+                                    description = "Order Id",
+                                    required = true,
+                                    in = ParameterIn.PATH
+                            ),
+                            @Parameter(
+                                    name = "state",
+                                    description = "Order state",
+                                    required = true,
+                                    in = ParameterIn.PATH
+                            )
+                    },
+                    responses = {
+                            @ApiResponse(
+                                    responseCode = "201",
+                                    description = "Success",
+                                    content = @Content(schema = @Schema(implementation = Order.class))
+                            ),
+                            @ApiResponse(responseCode = "406", description = "Not acceptable")}
+            )
+    )
+    public RouterFunction<ServerResponse> updateOrderState(UpdateStateOrderUseCase updateStateOrderUseCase) {
+        return route(PUT("/api/orders/{orderId}/{state}"),
+                request -> updateStateOrderUseCase.apply(request.pathVariable("orderId"), Integer.valueOf(request.pathVariable("state")))
+                        .switchIfEmpty(Mono.error(new Throwable(HttpStatus.NO_CONTENT.toString())))
+                        .flatMap(customer -> ServerResponse.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(customer))
+                        .onErrorResume(throwable -> ServerResponse.notFound().build()));
     }
 
 }

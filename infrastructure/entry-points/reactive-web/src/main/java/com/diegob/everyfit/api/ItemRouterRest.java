@@ -3,6 +3,7 @@ package com.diegob.everyfit.api;
 import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.customer.Customer;
 import com.diegob.everyfit.model.order.Order;
+import com.diegob.everyfit.usecase.deleteitem.DeleteItemUseCase;
 import com.diegob.everyfit.usecase.generateorder.GenerateOrderUseCase;
 import com.diegob.everyfit.usecase.getallcustomers.GetAllCustomersUseCase;
 import com.diegob.everyfit.usecase.getallitems.GetAllItemsUseCase;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Mono;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
@@ -44,7 +46,7 @@ public class ItemRouterRest {
                             @ApiResponse(responseCode = "200",
                                     description = "Success",
                                     content = @Content(schema = @Schema(implementation = ClothingItem.class))),
-                            @ApiResponse(responseCode = "204", description = "No customers found")}
+                            @ApiResponse(responseCode = "204", description = "No items found")}
             )
     )
     public RouterFunction<ServerResponse> getAllItems(GetAllItemsUseCase getAllItemsUseCase){
@@ -130,6 +132,7 @@ public class ItemRouterRest {
         return route(PUT("/api/items/{itemId}/{quantity}"),
                 request -> modifyQuantityUseCase.apply(request.pathVariable("itemId"),
                                 Integer.parseInt(request.pathVariable("quantity")))
+                        .switchIfEmpty(Mono.error(new Exception("Item not found")))
                         .flatMap(item ->ServerResponse.ok()
                                 .contentType(MediaType.APPLICATION_JSON)
                                         .bodyValue(item))
@@ -170,11 +173,54 @@ public class ItemRouterRest {
     )
     public RouterFunction<ServerResponse> getItemById(GetItemByIdUseCase getItemByIdUseCase){
         return route(GET("/api/items/{itemId}"),
-                request -> ServerResponse.ok()
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(BodyInserters.fromPublisher(getItemByIdUseCase.apply(request.pathVariable("itemId")), ClothingItem.class))
-                        .onErrorResume(throwable -> ServerResponse.noContent().build()));
+                request -> getItemByIdUseCase.apply(request.pathVariable("itemId"))
+                        .switchIfEmpty(Mono.error(new Throwable(HttpStatus.NO_CONTENT.toString())))
+                        .flatMap(customer -> ServerResponse.ok()
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(customer))
+                        .onErrorResume(throwable -> ServerResponse.notFound().build()));
 
+    }
+
+    @Bean
+    @RouterOperation(path = "/api/items/{itemId}",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            beanClass = DeleteItemUseCase.class,
+            method = RequestMethod.DELETE,
+            beanMethod = "apply",
+            operation = @Operation(operationId = "deleteItem",
+                    tags = "Item use cases",
+                    parameters = {
+                            @Parameter(
+                                    name = "itemId",
+                                    description = "Item Id",
+                                    required = true,
+                                    in = ParameterIn.PATH
+                            )
+                    },
+                    responses = {
+                            @ApiResponse(
+                                    responseCode = "200",
+                                    description = "Item deleted successfully",
+                                    content = @Content(
+                                            schema = @Schema(
+                                                    implementation = Customer.class
+                                            )
+                                    )
+                            ),
+                            @ApiResponse(responseCode = "404",
+                                    description = "Item not found"
+                            )
+                    }
+            )
+    )
+    public RouterFunction<ServerResponse> deleteItem(DeleteItemUseCase deleteItemUseCase){
+        return route(DELETE("/api/items/{itemId}"),
+                request ->  deleteItemUseCase.apply(request.pathVariable("itemId"))
+                        .flatMap(result -> ServerResponse.status(204)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(result))
+                        .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_FOUND).build()));
     }
 
 

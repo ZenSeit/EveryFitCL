@@ -66,7 +66,7 @@ public class ItemRepositoryAdapter implements ClothingItemRepository {
     public Mono<ClothingItem> getItemById(String id) {
         return itemRepository
                 .findById(id)
-                .switchIfEmpty(Mono.error(new Throwable("Item not found")))
+                .switchIfEmpty(Mono.empty())
                 .map(car -> mapper.map(car, ClothingItem.class))
                 .onErrorResume(Mono::error);
     }

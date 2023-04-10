@@ -2,14 +2,19 @@ package com.diegob.everyfit.api;
 
 import com.diegob.everyfit.model.clothingitem.ClothingItem;
 import com.diegob.everyfit.model.customer.Customer;
+import com.diegob.everyfit.usecase.createuser.CreateUserUseCase;
+import com.diegob.everyfit.usecase.deletecustomer.DeleteCustomerUseCase;
 import com.diegob.everyfit.usecase.getallcustomers.GetAllCustomersUseCase;
+import com.diegob.everyfit.usecase.getcustomerbyemail.GetCustomerByEmailUseCase;
 import com.diegob.everyfit.usecase.getcustomerbyid.GetCustomerByIdUseCase;
 import com.diegob.everyfit.usecase.getitembyid.GetItemByIdUseCase;
+import com.diegob.everyfit.usecase.registeritem.RegisterItemUseCase;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import org.springdoc.core.annotations.RouterOperation;
 import org.springframework.context.annotation.Bean;
@@ -21,7 +26,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
-import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
+import static org.springframework.web.reactive.function.server.RequestPredicates.*;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
@@ -51,17 +56,17 @@ public class CustomerRouterRest {
     }
 
     @Bean
-    @RouterOperation(path = "/api/items/{itemId}",
+    @RouterOperation(path = "/api/customers/{customerId}",
             produces = {MediaType.APPLICATION_JSON_VALUE},
-            beanClass = GetItemByIdUseCase.class,
+            beanClass = GetCustomerByIdUseCase.class,
             method = RequestMethod.GET,
             beanMethod = "apply",
-            operation = @Operation(operationId = "getItemById",
-                    tags = "Item use cases",
+            operation = @Operation(operationId = "getCustomerById",
+                    tags = "Customers use cases",
                     parameters = {
                             @Parameter(
-                                    name = "itemId",
-                                    description = "item id",
+                                    name = "customerId",
+                                    description = "customer id",
                                     required = true,
                                     in = ParameterIn.PATH
                             )
@@ -69,15 +74,15 @@ public class CustomerRouterRest {
                     responses = {
                             @ApiResponse(
                                     responseCode = "200",
-                                    description = "Item found",
+                                    description = "Customer found",
                                     content = @Content(
                                             schema = @Schema(
-                                                    implementation = ClothingItem.class
+                                                    implementation = Customer.class
                                             )
                                     )
                             ),
                             @ApiResponse(responseCode = "404",
-                                    description = "Item not found"
+                                    description = "Customer not found"
                             )
                     }
             )
@@ -89,5 +94,125 @@ public class CustomerRouterRest {
                         .body(BodyInserters.fromPublisher(getCustomerByIdUseCase.apply(request.pathVariable("customerId")), Customer.class))
                         .onErrorResume(throwable -> ServerResponse.noContent().build()));
 
+    }
+
+    @Bean
+    @RouterOperation(path = "/api/customers",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            beanClass = CreateUserUseCase.class,
+            method = RequestMethod.POST,
+            beanMethod = "apply",
+            operation = @Operation(
+                    operationId = "createUser",
+                    tags = "Customers use cases",
+                    parameters = {
+                            @Parameter(
+                                    name = "Customer",
+                                    in = ParameterIn.PATH,
+                                    schema = @Schema(implementation = Customer.class)
+                            )
+                    },
+                    responses = {
+                            @ApiResponse(
+                                    responseCode = "201",
+                                    description = "Success",
+                                    content = @Content(schema = @Schema(implementation = Customer.class))
+                            ),
+                            @ApiResponse(responseCode = "406", description = "Not acceptable")},
+                    requestBody = @RequestBody(required = true,
+                            description = "Save a customer",
+                            content = @Content(schema = @Schema(implementation = Customer.class)))
+            )
+    )
+    public RouterFunction<ServerResponse> createCustomer(CreateUserUseCase createUserUseCase){
+        return route(POST("/api/customers").and(accept(MediaType.APPLICATION_JSON)),
+                request -> request.bodyToMono(Customer.class)
+                        .flatMap(customer -> createUserUseCase.apply(customer)
+                                .flatMap(result -> ServerResponse.status(201)
+                                        .contentType(MediaType.APPLICATION_JSON)
+                                        .bodyValue(result))
+                                .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_ACCEPTABLE).bodyValue(throwable.getMessage()))));
+    }
+
+    @Bean
+    @RouterOperation(path = "/api/customers/{email}",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            beanClass = GetCustomerByIdUseCase.class,
+            method = RequestMethod.GET,
+            beanMethod = "apply",
+            operation = @Operation(operationId = "getCustomerByEmail",
+                    tags = "Customers use cases",
+                    parameters = {
+                            @Parameter(
+                                    name = "email",
+                                    description = "customer id",
+                                    required = true,
+                                    in = ParameterIn.PATH
+                            )
+                    },
+                    responses = {
+                            @ApiResponse(
+                                    responseCode = "200",
+                                    description = "Customer found",
+                                    content = @Content(
+                                            schema = @Schema(
+                                                    implementation = Customer.class
+                                            )
+                                    )
+                            ),
+                            @ApiResponse(responseCode = "404",
+                                    description = "Customer not found"
+                            )
+                    }
+            )
+    )
+    public RouterFunction<ServerResponse> getCustomerByEmail(GetCustomerByEmailUseCase getCustomerByEmailUseCase){
+        return route(GET("/api/customers/{email}"),
+                request -> ServerResponse.ok()
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(BodyInserters.fromPublisher(getCustomerByEmailUseCase.apply(request.pathVariable("email")), Customer.class))
+                        .onErrorResume(throwable -> ServerResponse.noContent().build()));
+
+    }
+
+    @Bean
+    @RouterOperation(path = "/api/customers/{customerId}",
+            produces = {MediaType.APPLICATION_JSON_VALUE},
+            beanClass = DeleteCustomerUseCase.class,
+            method = RequestMethod.DELETE,
+            beanMethod = "apply",
+            operation = @Operation(operationId = "deleteCustomer",
+                    tags = "Customers use cases",
+                    parameters = {
+                            @Parameter(
+                                    name = "customerId",
+                                    description = "Customer Id",
+                                    required = true,
+                                    in = ParameterIn.PATH
+                            )
+                    },
+                    responses = {
+                            @ApiResponse(
+                                    responseCode = "200",
+                                    description = "Customer deleted successfully",
+                                    content = @Content(
+                                            schema = @Schema(
+                                                    implementation = Customer.class
+                                            )
+                                    )
+                            ),
+                            @ApiResponse(responseCode = "404",
+                                    description = "Customer not found"
+                            )
+                    }
+            )
+    )
+    public RouterFunction<ServerResponse> deleteCustomer(DeleteCustomerUseCase deleteCustomerUseCase){
+        return route(DELETE("/api/customers/{customerId}"),
+                request ->  deleteCustomerUseCase.apply(request.pathVariable("customerId"))
+                        .flatMap(result -> ServerResponse.status(204)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(result))
+                        .onErrorResume(throwable -> ServerResponse.status(HttpStatus.NOT_FOUND).build()));
     }
 }
